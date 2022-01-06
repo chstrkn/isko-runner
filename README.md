@@ -4,6 +4,10 @@
 
 A T-Rex Runner-inspired game in which the player must jump to avoid getting hit by the terrifying sinkos in order to achieve a higher score.
 
+## Demo
+
+![Demo](demo/demo.gif)
+
 ## Prerequisites
 
 - Python 3.10.0 or above (added to PATH)
@@ -37,6 +41,14 @@ Once you have completed the installation, simply run [main.py](main.py) using th
 ```sh
 python main.py
 ```
+
+### Controls
+
+| Key                 | Action                                  |
+| ------------------- | --------------------------------------- |
+| <kbd>Spacebar</kbd> | Start the game or make the player jump. |
+| <kbd>Up Arrow</kbd> | Start the game or make the player jump. |
+| <kbd>Esc</kbd>      | Exit the game.                          |
 
 ## Authors
 
