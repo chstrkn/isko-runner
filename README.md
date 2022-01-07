@@ -44,11 +44,12 @@ python main.py
 
 ### Controls
 
-| Key                 | Action                                  |
-| ------------------- | --------------------------------------- |
-| <kbd>Spacebar</kbd> | Start the game or make the player jump. |
-| <kbd>Up Arrow</kbd> | Start the game or make the player jump. |
-| <kbd>Esc</kbd>      | Exit the game.                          |
+| Key                   | Action                                  |
+| --------------------- | --------------------------------------- |
+| <kbd>Spacebar</kbd>   | Start the game or make the player jump. |
+| <kbd>Up Arrow</kbd>   | Start the game or make the player jump. |
+| <kbd>Down Arrow</kbd> | Make the player duck.                   |
+| <kbd>Esc</kbd>        | Exit the game.                          |
 
 ## Authors
 
