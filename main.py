@@ -8,40 +8,47 @@ RESOLUTION = (WIDTH, HEIGHT) = (1200, 300)
 SCREEN = pygame.display.set_mode(RESOLUTION)
 SPRITE = pygame.image.load("assets/sprite.png").convert_alpha()
 LOGO = SPRITE.subsurface(2, 2, 72, 64)
-CLOUD = SPRITE.subsurface(76, 2, 107, 30)
 GROUND = SPRITE.subsurface(2, 98, 1200, 34)
-SINKO = SPRITE.subsurface(185, 2, 80, 70)
+INC = SPRITE.subsurface(185, 2, 91, 80)
+SINKO = SPRITE.subsurface(278, 2, 80, 70)
 NUMBERS = (
-    SPRITE.subsurface(267, 2, 18, 21),
-    SPRITE.subsurface(289, 2, 16, 21),
-    SPRITE.subsurface(307, 2, 18, 21),
-    SPRITE.subsurface(327, 2, 18, 21),
-    SPRITE.subsurface(347, 2, 18, 21),
-    SPRITE.subsurface(367, 2, 18, 21),
-    SPRITE.subsurface(387, 2, 18, 21),
-    SPRITE.subsurface(407, 2, 18, 21),
-    SPRITE.subsurface(427, 2, 18, 21),
-    SPRITE.subsurface(447, 2, 19, 21),
+    SPRITE.subsurface(360, 2, 18, 21),
+    SPRITE.subsurface(382, 2, 16, 21),
+    SPRITE.subsurface(400, 2, 18, 21),
+    SPRITE.subsurface(420, 2, 18, 21),
+    SPRITE.subsurface(440, 2, 18, 21),
+    SPRITE.subsurface(460, 2, 18, 21),
+    SPRITE.subsurface(480, 2, 18, 21),
+    SPRITE.subsurface(500, 2, 18, 21),
+    SPRITE.subsurface(520, 2, 18, 21),
+    SPRITE.subsurface(540, 2, 19, 21),
 )
-HI = SPRITE.subsurface(467, 2, 38, 21)
-GAMEOVER = SPRITE.subsurface(267, 29, 381, 21)
+FIRST = SPRITE.subsurface(360, 56, 59, 21)
+SECOND = SPRITE.subsurface(423, 56, 62, 21)
+THIRD = SPRITE.subsurface(489, 56, 64, 21)
+GAMEOVER = SPRITE.subsurface(360, 29, 381, 21)
 ISKO = (
-    SPRITE.subsurface(650, 2, 71, 94),
-    SPRITE.subsurface(723, 2, 71, 94),
-    SPRITE.subsurface(869, 2, 71, 94),
-    SPRITE.subsurface(796, 2, 71, 94),
-    SPRITE.subsurface(942, 2, 71, 94),
+    SPRITE.subsurface(743, 2, 71, 94),
+    SPRITE.subsurface(816, 2, 71, 94),
+    SPRITE.subsurface(962, 2, 71, 94),
+    SPRITE.subsurface(889, 2, 71, 94),
+    SPRITE.subsurface(1035, 28, 71, 68),
+    SPRITE.subsurface(1108, 28, 71, 68),
+    SPRITE.subsurface(1181, 2, 71, 94),
 )
-BACKGROUND = (230, 230, 230)
+BACKGROUND = SPRITE.subsurface(2, 134, 1200, 250)
+BACKGROUND.set_alpha(64)
+BGCOLOR = (230, 230, 230)
 pygame.display.set_icon(LOGO)
 pygame.display.set_caption("Isko Runner")
 
 
 class Isko:
     def __init__(self):
-        self.image = ISKO[0]
+        self.image = ISKO[6]
         self.image_index = 0
         self.running = True
+        self.ducking = False
         self.jumping = False
         self.rect = self.image.get_rect()
         self.rect.x = 50
@@ -50,7 +57,11 @@ class Isko:
         self.velocity = self.gravity = 15
 
     def run(self):
-        self.image = ISKO[:4][self.image_index - 1]
+        self.image = ISKO[:4][self.image_index // 2]
+        self.image_index += 1
+
+    def duck(self):
+        self.image = ISKO[4:6][self.image_index // 4]
         self.image_index += 1
 
     def jump(self):
@@ -63,15 +74,29 @@ class Isko:
             self.jumping = False
 
     def cry(self):
-        self.image = ISKO[4]
+        if self.ducking:
+            self.rect.y = 186
+        self.image = ISKO[6]
+
+    def switch(self, run_switch, duck_switch, jump_switch):
+        self.running = run_switch
+        self.ducking = duck_switch
+        self.jumping = jump_switch
 
     def update(self, key):
         if (key[pygame.K_UP] or key[pygame.K_SPACE]) and not self.jumping:
-            self.running = False
-            self.jumping = True
+            if key[pygame.K_DOWN]:
+                self.rect.y = 186
+            self.switch(False, False, True)
+        elif key[pygame.K_DOWN] and not self.jumping:
+            self.rect.y = 212
+            self.switch(False, True, False)
         elif not self.jumping:
-            self.running = True
-        if self.running:
+            self.rect.y = 186
+            self.switch(True, False, False)
+        if self.ducking:
+            self.duck()
+        elif self.running:
             self.run()
         elif self.jumping:
             self.jump()
@@ -82,12 +107,11 @@ class Isko:
         SCREEN.blit(self.image, self.rect)
 
 
-class Sinko:
-    def __init__(self):
-        self.image = SINKO
+class Obstacle:
+    def __init__(self, image):
+        self.image = image
         self.rect = self.image.get_rect()
         self.rect.x = WIDTH
-        self.rect.y = 209
         self.velocity = -10
         self.out = False
 
@@ -101,24 +125,16 @@ class Sinko:
         self.update()
 
 
-class Cloud:
-    def __init__(self, x):
-        self.image = CLOUD
-        self.image.set_alpha(128)
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = random.randint(75, 125)
-        self.velocity = -3
+class Sinko(Obstacle):
+    def __init__(self):
+        super().__init__(SINKO)
+        self.rect.y = 209
 
-    def update(self):
-        self.rect.x += self.velocity
-        if self.rect.x < -(self.rect.width):
-            self.rect.x = WIDTH + random.randint(400, 800)
-            self.rect.y = random.randint(75, 125)
 
-    def draw(self):
-        SCREEN.blit(self.image, self.rect)
-        self.update()
+class Incomplete(Obstacle):
+    def __init__(self):
+        super().__init__(INC)
+        self.rect.y = 124
 
 
 class Ground:
@@ -148,15 +164,40 @@ class Scoreboard:
     def __init__(self):
         self.score = 0
         self.score_str = str(self.score)
-        self.hi_score = "00000"
+        self.score_list = []
+        try:
+            with open("leaderboard.txt") as leaderboard:
+                for entry in leaderboard:
+                    self.score_list.append(entry.replace("\n", ""))
+        except FileNotFoundError:
+            with open("leaderboard.txt", "w") as leaderboard:
+                for _ in range(3):
+                    leaderboard.write("00000\n")
+                    self.score_list.append("00000")
 
-    def hi(self):
-        SCREEN.blit(HI, (870, 20))
-        SCREEN.blit(NUMBERS[int(self.hi_score[0])], (934, 20))
-        SCREEN.blit(NUMBERS[int(self.hi_score[1])], (956, 20))
-        SCREEN.blit(NUMBERS[int(self.hi_score[2])], (978, 20))
-        SCREEN.blit(NUMBERS[int(self.hi_score[3])], (1000, 20))
-        SCREEN.blit(NUMBERS[int(self.hi_score[4])], (1022, 20))
+    def first(self):
+        SCREEN.blit(FIRST, (407, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[0][0])], (492, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[0][1])], (513, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[0][2])], (536, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[0][3])], (558, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[0][4])], (580, 20))
+
+    def second(self):
+        SCREEN.blit(SECOND, (624, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[1][0])], (712, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[1][1])], (734, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[1][2])], (756, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[1][3])], (778, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[1][4])], (800, 20))
+
+    def third(self):
+        SCREEN.blit(THIRD, (844, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[2][0])], (934, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[2][1])], (956, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[2][2])], (978, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[2][3])], (1000, 20))
+        SCREEN.blit(NUMBERS[int(self.score_list[2][4])], (1022, 20))
 
     def current(self):
         self.score_str = str(int(self.score)).rjust(5, "0")
@@ -172,19 +213,31 @@ class Scoreboard:
 
     def update(self):
         self.score_str = str(int(self.score)).rjust(5, "0")
-        if self.score_str > self.hi_score:
-            self.hi_score = self.score_str
+        if self.score_str > self.score_list[0]:
+            self.score_list[2] = self.score_list[1]
+            self.score_list[1] = self.score_list[0]
+            self.score_list[0] = self.score_str
+        elif self.score_str > self.score_list[1]:
+            self.score_list[2] = self.score_list[1]
+            self.score_list[1] = self.score_str
+        elif self.score_str > self.score_list[2]:
+            self.score_list[2] = self.score_str
+        with open("leaderboard.txt", "w") as leaderboard:
+            for score_str in self.score_list:
+                leaderboard.write(f"{score_str}\n")
 
     def draw(self):
-        if self.hi_score != "0" * 5:
-            self.hi()
+        self.first()
+        self.second()
+        self.third()
         self.current()
 
 
 def gamestart():
     scoreboard = Scoreboard()
     while True:
-        SCREEN.fill(BACKGROUND)
+        SCREEN.fill(BGCOLOR)
+        SCREEN.blit(BACKGROUND, (0, 61))
         SCREEN.blit(GROUND, (0, 266))
         SCREEN.blit(ISKO[0], (50, 186))
         scoreboard.draw()
@@ -194,7 +247,7 @@ def gamestart():
                 pygame.K_SPACE,
                 pygame.K_UP,
             ]:
-                gameplay(scoreboard)
+                gameplay()
             if event.type == pygame.QUIT or (
                 event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
             ):
@@ -202,23 +255,21 @@ def gamestart():
                 sys.exit()
 
 
-def gameplay(scoreboard):
+def gameplay():
     player = Isko()
     obstacle = Sinko()
-    cloud0 = Cloud(WIDTH)
-    cloud1 = Cloud(WIDTH + 600)
     ground = Ground()
+    scoreboard = Scoreboard()
     clock = pygame.time.Clock()
     FPS = 30
-    scoreboard.score = 0
     while True:
-        SCREEN.fill(BACKGROUND)
-        cloud0.draw()
-        cloud1.draw()
+        SCREEN.fill(BGCOLOR)
+        SCREEN.blit(BACKGROUND, (0, 61))
         ground.draw()
         if obstacle.out:
-            obstacle = Sinko()
-        obstacle.draw()
+            obstacle = Sinko() if random.randint(0, 4) else Incomplete()
+        else:
+            obstacle.draw()
         if player.rect.colliderect(obstacle.rect):
             scoreboard.update()
             gameover(player, scoreboard)
@@ -250,7 +301,7 @@ def gameover(player, scoreboard):
                 pygame.K_SPACE,
                 pygame.K_UP,
             ]:
-                gameplay(scoreboard)
+                gameplay()
             if event.type == pygame.QUIT or (
                 event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
             ):
